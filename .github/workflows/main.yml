@@ -49,29 +49,17 @@ jobs:
           echo "Accepting Android SDK licenses..."
           yes | sdkmanager --licenses
 
-      - name: Install Emulator and System Images
+      - name: Reinstall Emulator and System Images
         run: |
-          sdkmanager --update
-          sdkmanager --verbose "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
-
-      - name: Force Install System Images in Custom Directory
-        run: |
-          echo "Creating custom directory for system images..."
-          sudo mkdir -p $ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64
-          echo "Forcing installation of system images..."
-          sdkmanager --verbose --install "system-images;android-30;google_apis;x86_64"
-          ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
+          echo "Reinstalling Android SDK components..."
+          sdkmanager --verbose --install "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          sdkmanager --verbose --update
 
       - name: Debug SDK Directories
         run: |
           echo "Checking full SDK directory..."
           ls -R $ANDROID_SDK_ROOT || echo "SDK directory not found"
           echo "Checking system-images directory..."
-          ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
-
-      - name: Validate Installed System Images After Reinstall
-        run: |
-          sdkmanager --list | grep "system-images"
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
 
       - name: Debug AVD System Images
@@ -83,8 +71,8 @@ jobs:
       - name: Set up Android Emulator
         run: |
           source $GITHUB_ENV
-          echo "Creating AVD using explicit path..."
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel" || (
+          echo "Creating AVD with explicit ABI..."
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --abi "x86_64" --device "pixel" || (
             echo "AVD creation failed. Debugging directory structure..."
             ls -R $ANDROID_SDK_ROOT/system-images
             exit 1
