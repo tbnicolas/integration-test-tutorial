@@ -46,21 +46,16 @@ jobs:
       - name: Install Emulator and System Images
         run: |
           sdkmanager --update
-          sdkmanager --verbose "system-images;android-30;default;x86_64" "platforms;android-30" "platform-tools" "emulator"
-
-      - name: Debug SDK Paths
-        run: |
-          echo "Checking Android SDK directory..."
-          ls -R /usr/lib/android-sdk
-          echo "Checking system-images directory..."
-          ls -R /usr/lib/android-sdk/system-images || echo "System images directory not found"
+          sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
       - name: Validate Installed System Images
-        run: sdkmanager --list | grep "system-images"
+        run: |
+          sdkmanager --list | grep "system-images"
+          ls -R /usr/lib/android-sdk/system-images || echo "System images directory not found"
 
       - name: Set up Android Emulator
         run: |
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --device "pixel"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
