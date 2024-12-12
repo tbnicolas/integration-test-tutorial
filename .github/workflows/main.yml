@@ -44,6 +44,11 @@ jobs:
           source $GITHUB_ENV
           sdkmanager --list
 
+      - name: Accept Android SDK Licenses
+        run: |
+          echo "Accepting Android SDK licenses..."
+          yes | sdkmanager --licenses
+
       - name: Install Emulator and System Images
         run: |
           sdkmanager --update
@@ -79,7 +84,11 @@ jobs:
         run: |
           source $GITHUB_ENV
           echo "Creating AVD using explicit path..."
-          echo "no" | avdmanager create avd -n test -k "system-images/android-30/google_apis/x86_64" --device "pixel"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel" || (
+            echo "AVD creation failed. Debugging directory structure..."
+            ls -R $ANDROID_SDK_ROOT/system-images
+            exit 1
+          )
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
