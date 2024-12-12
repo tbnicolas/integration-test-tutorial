@@ -56,29 +56,10 @@ jobs:
           echo "Checking system-images directory..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
 
-      - name: Search for System Images
+      - name: Validate Installed System Images After Reinstall
         run: |
-          echo "Searching for system-images in the entire file system..."
-          find / -type d -name "system-images" 2>/dev/null || echo "System images not found anywhere"
-
-      - name: Update Android SDK Root if necessary
-        run: |
-          if [ ! -d "$ANDROID_SDK_ROOT/system-images" ]; then
-            echo "Detected missing system-images directory. Searching for actual SDK location..."
-            if [ -d "$HOME/.android-sdk" ]; then
-              echo "Found SDK in $HOME/.android-sdk. Updating ANDROID_SDK_ROOT."
-              echo "ANDROID_SDK_ROOT=$HOME/.android-sdk" >> $GITHUB_ENV
-              echo "PATH=$HOME/.android-sdk/cmdline-tools/latest/bin:$HOME/.android-sdk/emulator:$HOME/.android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
-            else
-              echo "SDK location not found. Exiting with error."
-              exit 1
-            fi
-          fi
-
-      - name: Validate Installed System Images
-        run: |
-          source $GITHUB_ENV
           sdkmanager --list | grep "system-images"
+          ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
 
       - name: Set up Android Emulator
         run: |
