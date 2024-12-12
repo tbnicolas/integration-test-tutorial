@@ -49,10 +49,16 @@ jobs:
       - name: Install Emulator and System Images
         run: |
           sdkmanager "system-images;android-30;default;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          sdkmanager --list
+
+      - name: Debug Installed System Images
+        run: |
+          ls -R $ANDROID_SDK_ROOT/system-images
+          sdkmanager --list | grep "system-images"
 
       - name: Set up Android Emulator
         run: |
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --device "pixel"
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
