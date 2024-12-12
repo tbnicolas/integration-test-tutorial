@@ -46,7 +46,7 @@ jobs:
       - name: Install Emulator and System Images
         run: |
           sdkmanager --update
-          sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          sdkmanager --verbose "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
       - name: Validate Installed System Images
         run: |
