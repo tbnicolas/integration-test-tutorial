@@ -32,29 +32,31 @@ jobs:
           sudo unzip -q commandlinetools.zip -d /usr/lib/android-sdk/cmdline-tools
           sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
 
-      - name: Debug Command Line Tools
-        run: ls -R /usr/lib/android-sdk/cmdline-tools
-
       - name: Configure Android SDK Paths
         run: |
           echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
           echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
         shell: bash
 
-      - name: Verify SDKManager Installation
+      - name: Validate SDK Installation
         run: |
           source $GITHUB_ENV
           sdkmanager --list
 
       - name: Install Emulator and System Images
         run: |
-          sdkmanager "system-images;android-30;default;x86_64" "platforms;android-30" "platform-tools" "emulator"
-          sdkmanager --list
+          sdkmanager --update
+          sdkmanager --verbose "system-images;android-30;default;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
-      - name: Debug Installed System Images
+      - name: Debug SDK Paths
         run: |
-          ls -R $ANDROID_SDK_ROOT/system-images
-          sdkmanager --list | grep "system-images"
+          echo "Checking Android SDK directory..."
+          ls -R /usr/lib/android-sdk
+          echo "Checking system-images directory..."
+          ls -R /usr/lib/android-sdk/system-images || echo "System images directory not found"
+
+      - name: Validate Installed System Images
+        run: sdkmanager --list | grep "system-images"
 
       - name: Set up Android Emulator
         run: |
