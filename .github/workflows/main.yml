@@ -36,7 +36,8 @@ jobs:
         run: |
           echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
           echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
-        shell: bash
+          source $GITHUB_ENV
+          echo "Current ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
 
       - name: Validate SDK Installation
         run: |
