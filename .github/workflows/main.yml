@@ -52,7 +52,7 @@ jobs:
       - name: Force Install System Images in Custom Directory
         run: |
           echo "Creating custom directory for system images..."
-          mkdir -p $ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64
+          sudo mkdir -p $ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64
           echo "Forcing installation of system images..."
           sdkmanager --verbose --install "system-images;android-30;google_apis;x86_64"
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
