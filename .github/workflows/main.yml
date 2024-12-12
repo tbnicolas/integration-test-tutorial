@@ -48,18 +48,17 @@ jobs:
         run: |
           sdkmanager --verbose --install "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
-      - name: Debug SDK Directories
+      - name: Set up KVM for Emulator
         run: |
-          echo "Checking SDK directory..."
-          ls -R $ANDROID_SDK_ROOT || echo "SDK directory not found"
-          echo "Checking system-images directory..."
-          ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
-
-      - name: Debug AVD System Images
-        run: |
-          source $GITHUB_ENV
-          echo "Listing AVD system images..."
-          avdmanager list
+          echo "Checking and configuring KVM for Android Emulator..."
+          if grep -q "kvm" /etc/group; then
+            echo "Group 'kvm' already exists. Adding user to 'kvm' group."
+          else
+            echo "Creating 'kvm' group."
+            sudo groupadd kvm
+          fi
+          sudo gpasswd -a $USER kvm
+          ls -la /dev/kvm || echo "KVM device not found. Emulation might not use hardware acceleration."
 
       - name: Set up Android Emulator
         run: |
