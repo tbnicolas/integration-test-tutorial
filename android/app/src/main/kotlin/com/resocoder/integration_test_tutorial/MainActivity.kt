@@ -1,4 +1,4 @@
-package com.resocoder.integration_test_tutorial
+package com.tu_paquete
 
 import io.flutter.embedding.android.FlutterActivity
 
