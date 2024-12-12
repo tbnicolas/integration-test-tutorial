@@ -69,10 +69,17 @@ jobs:
           sdkmanager --list | grep "system-images"
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
 
+      - name: Debug AVD System Images
+        run: |
+          source $GITHUB_ENV
+          echo "Listing AVD system images..."
+          avdmanager list
+
       - name: Set up Android Emulator
         run: |
           source $GITHUB_ENV
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+          echo "Creating AVD using explicit path..."
+          echo "no" | avdmanager create avd -n test -k "system-images/android-30/google_apis/x86_64" --device "pixel"
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
