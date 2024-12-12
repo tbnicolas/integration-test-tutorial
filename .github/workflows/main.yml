@@ -27,37 +27,30 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget unzip
+          mkdir -p $HOME/.android-sdk/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O commandlinetools.zip
-          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
-          sudo unzip -q commandlinetools.zip -d /usr/lib/android-sdk/cmdline-tools
-          sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
+          unzip -q commandlinetools.zip -d $HOME/.android-sdk/cmdline-tools
+          mv $HOME/.android-sdk/cmdline-tools/cmdline-tools $HOME/.android-sdk/cmdline-tools/latest
 
       - name: Configure Android SDK Paths
         run: |
-          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
-          echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/.android-sdk" >> $GITHUB_ENV
+          echo "PATH=$HOME/.android-sdk/cmdline-tools/latest/bin:$HOME/.android-sdk/emulator:$HOME/.android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
           echo "Current ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
-
-      - name: Validate SDK Installation
-        run: |
-          source $GITHUB_ENV
-          sdkmanager --list
 
       - name: Accept Android SDK Licenses
         run: |
           echo "Accepting Android SDK licenses..."
           yes | sdkmanager --licenses
 
-      - name: Reinstall Emulator and System Images
+      - name: Install Emulator and System Images
         run: |
-          echo "Reinstalling Android SDK components..."
           sdkmanager --verbose --install "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
-          sdkmanager --verbose --update
 
       - name: Debug SDK Directories
         run: |
-          echo "Checking full SDK directory..."
+          echo "Checking SDK directory..."
           ls -R $ANDROID_SDK_ROOT || echo "SDK directory not found"
           echo "Checking system-images directory..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory still not found"
