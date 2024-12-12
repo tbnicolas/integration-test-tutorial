@@ -6,7 +6,6 @@ on:
       - ntrujillo/main
   workflow_dispatch:
 
-
 jobs:
   android-tests:
     name: Run Android Integration Tests
@@ -20,12 +19,22 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: 2.10.0
+
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Set up Android Emulator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lib32stdc++6 qemu-kvm android-sdk
+          sdkmanager "system-images;android-30;default;x86_64" "platforms;android-30" "platform-tools"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64"
+          nohup emulator -avd test -no-audio -no-window &
+          adb wait-for-device
+
       - name: Run Android integration tests
-        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart
-    
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
+
   ios-tests:
     name: Run IOS Integration Tests
     runs-on: macos-latest
@@ -37,7 +46,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 2.10.0 
+          flutter-version: 2.10.0
 
       - name: Install dependencies
         run: flutter pub get
@@ -45,7 +54,10 @@ jobs:
       - name: Install CocoaPods
         run: pod install --project-directory=ios
 
+      - name: Start iOS Simulator
+        run: |
+          xcrun simctl boot "iPhone 14"
+          xcrun simctl list devices
+
       - name: Run iOS integration tests
-        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart
-      
-      
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id="booted"
