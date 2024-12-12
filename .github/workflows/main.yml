@@ -55,6 +55,11 @@ jobs:
           echo "Checking system-images directory..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
 
+      - name: Search for System Images
+        run: |
+          echo "Searching for system-images in the entire file system..."
+          find / -type d -name "system-images" 2>/dev/null || echo "System images not found anywhere"
+
       - name: Update Android SDK Root if necessary
         run: |
           if [ ! -d "$ANDROID_SDK_ROOT/system-images" ]; then
