@@ -46,29 +46,13 @@ jobs:
 
       - name: Install Emulator and System Images
         run: |
-          sdkmanager --verbose --install "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
-
-      - name: Set up KVM for Emulator
-        run: |
-          echo "Checking and configuring KVM for Android Emulator..."
-          if grep -q "kvm" /etc/group; then
-            echo "Group 'kvm' already exists. Adding user to 'kvm' group."
-          else
-            echo "Creating 'kvm' group."
-            sudo groupadd kvm
-          fi
-          sudo gpasswd -a $USER kvm
-          ls -la /dev/kvm || echo "KVM device not found. Emulation might not use hardware acceleration."
+          sdkmanager --verbose --install "system-images;android-30;google_apis;arm64-v8a" "platforms;android-30" "platform-tools" "emulator"
 
       - name: Set up Android Emulator
         run: |
           source $GITHUB_ENV
-          echo "Creating AVD with explicit ABI..."
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --abi "x86_64" --device "pixel" || (
-            echo "AVD creation failed. Debugging directory structure..."
-            ls -R $ANDROID_SDK_ROOT/system-images
-            exit 1
-          )
+          echo "Creating AVD with ARM ABI..."
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;arm64-v8a" --device "pixel"
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
