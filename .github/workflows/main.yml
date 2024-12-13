@@ -40,11 +40,11 @@ jobs:
 
       - name: Accept Android SDK Licenses
         run: |
-          mkdir -p $ANDROID_SDK_ROOT/licenses
-          echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
-          echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_SDK_ROOT/licenses/android-sdk-license
-          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $ANDROID_SDK_ROOT/licenses/android-sdk-license
-          echo "Licenses manually accepted."
+          sudo mkdir -p $ANDROID_SDK_ROOT/licenses
+          echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" | sudo tee $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
+          echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" | sudo tee -a $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
+          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" | sudo tee -a $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
+          echo "Licenses manually accepted with sudo."
 
       - name: Install Emulator and System Images
         run: |
@@ -55,6 +55,13 @@ jobs:
         run: |
           echo "Verifying system images installation..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
+
+      - name: Retry Image Installation if Missing
+        run: |
+          if [ ! -d "$ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64" ]; then
+            echo "System images missing, reinstalling..."
+            sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
+          fi
 
       - name: Set up Android Emulator with Software Rendering
         run: |
