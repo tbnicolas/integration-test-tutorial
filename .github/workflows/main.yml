@@ -1,4 +1,4 @@
-name: Integration Tests with CircleCI Android Image
+name: Integration Tests with Dockerized Emulator
 
 on:
   pull_request:
@@ -23,11 +23,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Pull CircleCI Android Image
-        run: |
-          echo "Pulling CircleCI Android image..."
-          docker pull circleci/android:api-30
-
       - name: Start Docker Container with CircleCI Android Image
         run: |
           echo "Starting Docker container with CircleCI Android image..."
@@ -37,9 +32,9 @@ jobs:
       - name: Set up Android Emulator in Container
         run: |
           echo "Setting up Android emulator..."
-          docker exec -it android-container sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
-          docker exec -it android-container avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
-          docker exec -it android-container emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
+          docker exec -i android-container sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          docker exec -i android-container avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+          docker exec -i android-container emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           echo "Emulator is starting..."
           sleep 30
 
