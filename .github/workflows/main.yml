@@ -38,39 +38,35 @@ jobs:
           echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
 
-      - name: Fix permissions for Android SDK
-        run: sudo chmod -R 777 /usr/lib/android-sdk
-
       - name: Accept Android SDK Licenses
         run: |
           mkdir -p $ANDROID_SDK_ROOT/licenses
           echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
           echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" >> $ANDROID_SDK_ROOT/licenses/android-sdk-license
           echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" >> $ANDROID_SDK_ROOT/licenses/android-sdk-license
-
-      - name: Update Android SDK Tools
-        run: /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --update
-
-      - name: Clear Android SDK Cache
-        run: rm -rf /usr/lib/android-sdk/.android/cache
+          echo "Licenses manually accepted."
 
       - name: Install Emulator and System Images
         run: |
-          /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator"
-          /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
+          sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator"
+          sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
 
       - name: Debug SDK Directories
         run: |
+          echo "Verifying system images installation..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
 
       - name: Set up Android Emulator with Software Rendering
         run: |
+          echo "Creating and starting the emulator..."
           echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
       - name: Verify Emulator State
-        run: adb devices || echo "Emulator not detected!"
+        run: |
+          echo "Verifying emulator state..."
+          adb devices || echo "Emulator not detected!"
 
       - name: Run Android Integration Tests
         run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
