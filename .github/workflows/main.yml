@@ -38,6 +38,11 @@ jobs:
           echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
 
+      - name: Verify sdkmanager Installation
+        run: |
+          echo "Verifying sdkmanager..."
+          which sdkmanager || echo "sdkmanager not found in PATH!"
+
       - name: Accept Android SDK Licenses
         run: |
           sudo mkdir -p $ANDROID_SDK_ROOT/licenses
@@ -49,8 +54,8 @@ jobs:
       - name: Install Emulator and System Images
         run: |
           echo "Installing Android emulator and system images..."
-          sudo sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator" || echo "Retrying..."
-          sudo sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
+          sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator" || echo "Retrying..."
+          sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
 
       - name: Debug SDK Directories
         run: |
@@ -61,7 +66,7 @@ jobs:
         run: |
           if [ ! -d "$ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64" ]; then
             echo "System images missing, reinstalling..."
-            sudo sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
+            sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
           fi
 
       - name: Set up Android Emulator with Software Rendering
