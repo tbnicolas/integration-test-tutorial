@@ -1,4 +1,4 @@
-name: Integration Tests with Dockerized Emulator
+name: Integration Tests with Software Rendering Emulator
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   android-tests:
-    name: Run Android Integration Tests with CircleCI Android Image
+    name: Run Android Integration Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -23,27 +23,42 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Start Docker Container with CircleCI Android Image
+      - name: Install Android Command Line Tools
         run: |
-          echo "Starting Docker container with CircleCI Android image..."
-          docker run -d --name android-container circleci/android:api-30 tail -f /dev/null
-          echo "Docker container started."
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O commandlinetools.zip
+          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
+          sudo unzip -q commandlinetools.zip -d /usr/lib/android-sdk/cmdline-tools
+          sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
 
-      - name: Set up Android Emulator in Container
+      - name: Configure Android SDK Paths
         run: |
-          echo "Setting up Android emulator..."
-          docker exec -i android-container sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
-          docker exec -i android-container avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
-          docker exec -i android-container emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
-          echo "Emulator is starting..."
-          sleep 30
+          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
+          echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
+          source $GITHUB_ENV
 
-      - name: Connect ADB to Emulator
+      - name: Accept SDK Licenses
         run: |
-          echo "Connecting adb to emulator..."
-          adb connect localhost:5555
+          source $GITHUB_ENV
+          yes | sdkmanager --licenses
+
+      - name: Install Emulator and System Images
+        run: |
+          sdkmanager --update
+          sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+
+      - name: Set up Android Emulator with Software Rendering
+        run: |
+          source $GITHUB_ENV
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+          nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
+
+      - name: Validate Emulator State
+        run: |
+          adb wait-for-device
           adb devices
 
       - name: Run Android Integration Tests
         run: |
-          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart
+          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
