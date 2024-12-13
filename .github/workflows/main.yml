@@ -44,18 +44,37 @@ jobs:
 
       - name: Install Emulator and System Images
         run: |
+          echo "Installing emulator and system images..."
           sdkmanager --verbose "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
-      - name: Debug SDK Directories
+      - name: Debug Installed System Images
         run: |
+          echo "Listing installed system images..."
+          sdkmanager --list | grep "system-images"
           echo "Checking system-images directory..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
 
+      - name: Force Install System Images
+        run: |
+          echo "Reinstalling system images to avoid corruption..."
+          yes | sdkmanager --licenses
+          sdkmanager --install "system-images;android-30;google_apis;x86_64"
+          echo "Verifying system images installation..."
+          ls -R $ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64 || echo "System image directory not found"
+
       - name: Set up Android Emulator with Software Rendering
         run: |
+          echo "Creating and starting the emulator..."
           echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
-          nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect & 
+          nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
+      - name: Verify Emulator State
+        run: |
+          echo "Verifying emulator state..."
+          adb devices
+
       - name: Run Android Integration Tests
-        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
+        run: |
+          echo "Running Flutter integration tests..."
+          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
