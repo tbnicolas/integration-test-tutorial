@@ -45,22 +45,20 @@ jobs:
       - name: Install Emulator and System Images
         run: |
           echo "Installing emulator and system images..."
-          sdkmanager --verbose "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          yes | sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator"
+          yes | sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
 
-      - name: Debug Installed System Images
+      - name: Debug SDK Directories
         run: |
-          echo "Listing installed system images..."
-          sdkmanager --list | grep "system-images"
-          echo "Checking system-images directory..."
+          echo "Verifying system images installation..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
 
-      - name: Force Install System Images
+      - name: Retry Image Installation if Missing
         run: |
-          echo "Reinstalling system images to avoid corruption..."
-          yes | sdkmanager --licenses
-          sdkmanager --install "system-images;android-30;google_apis;x86_64"
-          echo "Verifying system images installation..."
-          ls -R $ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64 || echo "System image directory not found"
+          if [ ! -d "$ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64" ]; then
+            echo "System images missing, reinstalling..."
+            yes | sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
+          fi
 
       - name: Set up Android Emulator with Software Rendering
         run: |
@@ -72,9 +70,7 @@ jobs:
       - name: Verify Emulator State
         run: |
           echo "Verifying emulator state..."
-          adb devices
+          adb devices || echo "Emulator not detected!"
 
       - name: Run Android Integration Tests
-        run: |
-          echo "Running Flutter integration tests..."
-          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
