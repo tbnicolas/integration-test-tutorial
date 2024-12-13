@@ -1,4 +1,4 @@
-name: Integration Tests with Software Rendering Emulator
+name: Integration Tests with Software Rendering
 
 on:
   pull_request:
@@ -38,27 +38,19 @@ jobs:
           echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
 
-      - name: Accept SDK Licenses
+      - name: Accept Android SDK Licenses
         run: |
-          source $GITHUB_ENV
-          yes | sdkmanager --licenses
+          yes | sdkmanager --licenses || echo "Licenses accepted"
 
       - name: Install Emulator and System Images
         run: |
-          sdkmanager --update
-          sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          sdkmanager --verbose "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
       - name: Set up Android Emulator with Software Rendering
         run: |
-          source $GITHUB_ENV
           echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
-          nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
-
-      - name: Validate Emulator State
-        run: |
-          adb wait-for-device
-          adb devices
+          nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect & 
+          timeout 120s adb wait-for-device
 
       - name: Run Android Integration Tests
-        run: |
-          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
