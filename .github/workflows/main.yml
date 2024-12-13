@@ -75,3 +75,31 @@ jobs:
 
       - name: Run Android Integration Tests
         run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
+ 
+  ios-simulator:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Xcode
+        run: |
+          echo "Configuring Xcode..."
+          sudo xcode-select -switch /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Install Dependencies
+        run: |
+          echo "Installing CocoaPods dependencies..."
+          brew install cocoapods
+          pod install --project-directory=YourProjectDirectory
+
+      - name: Build and Run on iOS Simulator
+        run: |
+          echo "Building and running the app..."
+          xcodebuild build \
+            -workspace YourProject.xcworkspace \
+            -scheme YourScheme \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 14,OS=16.2'
