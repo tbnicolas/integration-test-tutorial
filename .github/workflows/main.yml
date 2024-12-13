@@ -46,6 +46,11 @@ jobs:
         run: |
           sdkmanager --verbose "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
 
+      - name: Debug SDK Directories
+        run: |
+          echo "Checking system-images directory..."
+          ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
+
       - name: Set up Android Emulator with Software Rendering
         run: |
           echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
