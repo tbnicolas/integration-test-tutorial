@@ -1,4 +1,4 @@
-name: Integration Tests with Dockerized Emulator
+name: Integration Tests with CircleCI Android Image
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   android-tests:
-    name: Run Android Integration Tests in Docker
+    name: Run Android Integration Tests with CircleCI Android Image
     runs-on: ubuntu-latest
 
     steps:
@@ -23,25 +23,25 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Bloque para loguearse en Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: nicolas3570
-          password: 8q2ZRS[8+xB?
-
-      - name: Start Android Emulator in Docker
+      - name: Pull CircleCI Android Image
         run: |
-          echo "Starting Docker container with Android emulator..."
-          docker run -d -p 6080:6080 --name android-container budtmo/docker-android-x86-8.1
-          echo "Waiting for emulator to start..."
+          echo "Pulling CircleCI Android image..."
+          docker pull circleci/android:api-30
+
+      - name: Start Docker Container with CircleCI Android Image
+        run: |
+          echo "Starting Docker container with CircleCI Android image..."
+          docker run -d --name android-container circleci/android:api-30 tail -f /dev/null
+          echo "Docker container started."
+
+      - name: Set up Android Emulator in Container
+        run: |
+          echo "Setting up Android emulator..."
+          docker exec -it android-container sdkmanager "system-images;android-30;google_apis;x86_64" "platforms;android-30" "platform-tools" "emulator"
+          docker exec -it android-container avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+          docker exec -it android-container emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
+          echo "Emulator is starting..."
           sleep 30
-          docker exec -it android-container start-emulator
-
-      - name: Debug Emulator State
-        run: |
-          echo "Checking emulator logs..."
-          docker logs android-container
 
       - name: Connect ADB to Emulator
         run: |
