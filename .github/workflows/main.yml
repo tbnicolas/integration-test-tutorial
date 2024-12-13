@@ -38,23 +38,22 @@ jobs:
           echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
           source $GITHUB_ENV
 
-      - name: Verify sdkmanager Installation
-        run: |
-          echo "Verifying sdkmanager..."
-          which sdkmanager || echo "sdkmanager not found in PATH!"
-
       - name: Accept Android SDK Licenses
         run: |
           sudo mkdir -p $ANDROID_SDK_ROOT/licenses
           echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" | sudo tee $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
           echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" | sudo tee -a $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
           echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" | sudo tee -a $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
-          echo "Licenses manually accepted with sudo."
+          echo "Licenses manually accepted."
+
+      - name: Fix Permissions for SDK
+        run: |
+          sudo chmod -R 777 /usr/lib/android-sdk
 
       - name: Install Emulator and System Images
         run: |
           echo "Installing Android emulator and system images..."
-          sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator" || echo "Retrying..."
+          sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator"
           sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
 
       - name: Debug SDK Directories
@@ -62,17 +61,10 @@ jobs:
           echo "Verifying system images installation..."
           ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
 
-      - name: Retry Image Installation if Missing
-        run: |
-          if [ ! -d "$ANDROID_SDK_ROOT/system-images/android-30/google_apis/x86_64" ]; then
-            echo "System images missing, reinstalling..."
-            sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
-          fi
-
       - name: Set up Android Emulator with Software Rendering
         run: |
           echo "Creating and starting the emulator..."
-          echo "no" | sudo avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
           nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
           timeout 120s adb wait-for-device
 
