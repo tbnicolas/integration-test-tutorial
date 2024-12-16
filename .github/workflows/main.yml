@@ -1,105 +1,45 @@
-name: Integration Tests with Software Rendering
+name: Run Integration Tests with Firebase Test Lab
 
 on:
-  pull_request:
+  push:
     branches:
       - ntrujillo/main
   workflow_dispatch:
 
 jobs:
-  android-tests:
-    name: Run Android Integration Tests
+  integration-tests:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: 2.10.0
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
 
-      - name: Install dependencies
-        run: flutter pub get
+    - name: Install Dependencies
+      run: flutter pub get
 
-      - name: Install Android Command Line Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O commandlinetools.zip
-          sudo mkdir -p /usr/lib/android-sdk/cmdline-tools
-          sudo unzip -q commandlinetools.zip -d /usr/lib/android-sdk/cmdline-tools
-          sudo mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools /usr/lib/android-sdk/cmdline-tools/latest
+    - name: Build APK for Testing
+      run: flutter build apk --debug
 
-      - name: Configure Android SDK Paths
-        run: |
-          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
-          echo "PATH=/usr/lib/android-sdk/cmdline-tools/latest/bin:/usr/lib/android-sdk/emulator:/usr/lib/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
+    - name: Authenticate with Firebase
+      env:
+        FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      run: |
+        echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase_key.json
+        export GOOGLE_APPLICATION_CREDENTIALS=$HOME/firebase_key.json
+        gcloud auth activate-service-account --key-file=$HOME/firebase_key.json
+        gcloud config set project integration-test-tutoria-9b3fe
 
-      - name: Accept Android SDK Licenses
-        run: |
-          sudo mkdir -p $ANDROID_SDK_ROOT/licenses
-          echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" | sudo tee $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
-          echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" | sudo tee -a $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
-          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" | sudo tee -a $ANDROID_SDK_ROOT/licenses/android-sdk-license > /dev/null
-          echo "Licenses manually accepted."
+    - name: Upload APK to Firebase Test Lab
+      run: |
+        gcloud firebase test android run \
+          --type instrumentation \
+          --app build/app/outputs/flutter-apk/app-debug.apk \
+          --test build/app/outputs/flutter-apk/app-debug-androidTest.apk
 
-      - name: Fix Permissions for SDK
-        run: |
-          sudo chmod -R 777 /usr/lib/android-sdk
-
-      - name: Install Emulator and System Images
-        run: |
-          echo "Installing Android emulator and system images..."
-          sdkmanager --verbose "platforms;android-30" "platform-tools" "emulator"
-          sdkmanager --verbose "system-images;android-30;google_apis;x86_64"
-
-      - name: Debug SDK Directories
-        run: |
-          echo "Verifying system images installation..."
-          ls -R $ANDROID_SDK_ROOT/system-images || echo "System images directory not found"
-
-      - name: Set up Android Emulator with Software Rendering
-        run: |
-          echo "Creating and starting the emulator..."
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;google_apis;x86_64" --device "pixel"
-          nohup emulator -avd test -no-audio -no-window -gpu swiftshader_indirect &
-          timeout 120s adb wait-for-device
-
-      - name: Verify Emulator State
-        run: |
-          echo "Verifying emulator state..."
-          adb devices || echo "Emulator not detected!"
-
-      - name: Run Android Integration Tests
-        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_test.dart --device-id=emulator-5554
- 
-  ios-simulator:
-    runs-on: macos-latest
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Set Up Xcode
-        run: |
-          echo "Configuring Xcode..."
-          sudo xcode-select -switch /Applications/Xcode.app
-          xcodebuild -version
-
-      - name: Install Dependencies
-        run: |
-          echo "Installing CocoaPods dependencies..."
-          brew install cocoapods
-          pod install --project-directory=YourProjectDirectory
-
-      - name: Build and Run on iOS Simulator
-        run: |
-          echo "Building and running the app..."
-          xcodebuild build \
-            -workspace YourProject.xcworkspace \
-            -scheme YourScheme \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 14,OS=16.2'
+    - name: Cleanup Firebase Key
+      run: rm $HOME/firebase_key.json
